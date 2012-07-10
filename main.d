@@ -48,7 +48,60 @@ void main(void)
 `;
 
 
-void setupWindow(int width, int height)
+void main(string args[])
+{
+  DerelictSDL2.load();
+  DerelictSDL2Image.load();
+  DerelictGL3.load();
+  
+  auto window = setupWindow(800, 600);
+  
+  auto shader = makeShader(vertexShaderSource, fragmentShaderSource);
+  auto vao = makeVAO();
+  
+  initUniforms(shader);
+  
+  auto textureId = makeTexture("bugship.png");
+  
+  bool running = true;
+  while (running)
+  {
+    SDL_Event event;
+    while (SDL_PollEvent(&event))
+    {
+      switch (event.type)
+      {
+        case SDL_KEYDOWN:
+          running = false;
+          break;
+          
+        default:
+          break;
+      }
+    }
+    
+    glClear(GL_COLOR_BUFFER_BIT);
+    
+    shader.glUseProgram();
+    
+    vao.glBindVertexArray();
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureId);
+    
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
+    glUseProgram(0);
+    
+    SDL_GL_SwapWindow(window);
+  }
+  
+}
+
+
+SDL_Window* setupWindow(int width, int height)
 {
   enforce(SDL_Init(SDL_INIT_VIDEO) == 0, "Error initializing SDL");  
   
@@ -71,27 +124,12 @@ void setupWindow(int width, int height)
   GLVersion glVersion = DerelictGL3.reload();
 
   writeln("loaded OpenGL version " ~ to!string(glVersion));
+  
+  return window;
 }
 
 
-void main(string args[])
-{
-  DerelictSDL2.load();
-  DerelictSDL2Image.load();
-  DerelictGL3.load();
-  
-  setupWindow(800, 600);
-  
-  auto shader = makeShader(vertexShaderSource, fragmentShaderSource);
-  
-  makeVAO();
-  initUniforms(shader);
-  
-  makeTexture("bugship.png");
-}
-
-
-void makeVAO()
+uint makeVAO()
 {
   uint verticesVBO, colorsVBO;
   
@@ -128,6 +166,8 @@ void makeVAO()
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   
   glBindVertexArray(0);
+  
+  return vao;
 }
 
 

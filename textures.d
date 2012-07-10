@@ -10,7 +10,7 @@ import derelict.sdl2.sdl;
 import derelict.sdl2.image;
 
 
-void makeTexture(string fileName)
+uint makeTexture(string fileName)
 {
   enforce(exists(fileName), "Could not find file " ~ fileName);
 
@@ -39,6 +39,8 @@ void makeTexture(string fileName)
   glTexImage2D(GL_TEXTURE_2D, 0, mode, surface.w, surface.h, 0, mode, GL_UNSIGNED_BYTE, surface.flip().pixels);
 
   surface.SDL_FreeSurface();
+  
+  return textureId;
 }
 
 
