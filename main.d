@@ -32,13 +32,13 @@ void main(void)
 const string fragmentShaderSource=`
 #version 330
 
-uniform sampler2D colMap;
+uniform sampler2D colorMap;
 
 in vec2 coords;
 
 void main(void)
 {
-  vec3 color = texture2D(colMap, coords.st).xyz;
+  vec3 color = texture2D(colorMap, coords.st).xyz;
   
   gl_FragColor = vec4((coords.yyx + color), 1.0);
 }
@@ -71,7 +71,6 @@ void setupWindow(int width, int height)
 }
 
 
-
 void main(string args[])
 {
   DerelictSDL2.load();
@@ -80,4 +79,59 @@ void main(string args[])
   setupWindow(800, 600);
   
   auto shader = makeShader(vertexShaderSource, fragmentShaderSource);
+  
+  makeVAO();
+  initUniforms(shader);
+}
+
+
+void makeVAO()
+{
+  uint verticesVBO, colorsVBO;
+  
+  immutable float[] vertices = [-0.75, -0.75, 0.0,
+                                 0.75,  0.75, 0.0,
+                                -0.75,  0.75, 0.0];
+                         
+  immutable float[] colors = [0.0, 0.0,
+                              1.0, 1.0,
+                              0.0, 1.0];
+                              
+  uint vao = 0;
+  glGenVertexArrays(1, &vao);
+  
+  vao.glBindVertexArray();
+  
+  glGenBuffers(1, &verticesVBO);
+  enforce(verticesVBO > 0);
+  
+  glBindBuffer(GL_ARRAY_BUFFER, verticesVBO);
+  
+  glBufferData(GL_ARRAY_BUFFER, vertices.length * GL_FLOAT.sizeof, vertices.ptr, GL_STATIC_DRAW);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, null);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  
+  
+  glGenBuffers(1, &colorsVBO);
+  enforce(colorsVBO > 0);
+  glBindBuffer(GL_ARRAY_BUFFER, colorsVBO);
+  glBufferData(GL_ARRAY_BUFFER, colors.length * GL_FLOAT.sizeof, colors.ptr, GL_STATIC_DRAW);
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  
+  glBindVertexArray(0);
+}
+
+
+void initUniforms(uint shader)
+{
+  auto colorLocation = shader.glGetUniformLocation("colorMap");
+  
+  enforce(colorLocation != -1, "Error: main shader did not assign id to sampler2D colorMap");
+  
+  shader.glUseProgram();
+  colorLocation.glUniform1i(0);
+  glUseProgram(0);
 }
