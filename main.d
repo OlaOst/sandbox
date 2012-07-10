@@ -1,3 +1,7 @@
+pragma(lib, "DerelictUtil.lib");
+pragma(lib, "DerelictSDL2.lib");
+pragma(lib, "DerelictGL3.lib");
+
 import std.conv;
 import std.exception;
 import std.stdio;
@@ -6,9 +10,39 @@ import std.string;
 import derelict.opengl3.gl3;
 import derelict.sdl2.sdl2;
 
-pragma(lib, "DerelictUtil.lib");
-pragma(lib, "DerelictSDL2.lib");
-pragma(lib, "DerelictGL3.lib");
+import shaders;
+
+
+const string vertexShaderSource=`
+#version 330
+
+layout(location = 0) in vec3 pos;
+layout(location = 1) in vec2 texCoords;
+
+out vec2 coords;
+
+void main(void)
+{
+  coords = texCoords.st;
+  
+  gl_Position = vec4(pos, 1.0);
+}
+`;
+
+const string fragmentShaderSource=`
+#version 330
+
+uniform sampler2D colMap;
+
+in vec2 coords;
+
+void main(void)
+{
+  vec3 color = texture2D(colMap, coords.st).xyz;
+  
+  gl_FragColor = vec4((coords.yyx + color), 1.0);
+}
+`;
 
 
 void setupWindow(int width, int height)
@@ -36,97 +70,7 @@ void setupWindow(int width, int height)
   writeln("loaded OpenGL version " ~ to!string(glVersion));
 }
 
-void setupShaders()
-{
-  const string vertexShaderSource=`
-  #version 330
-  
-  layout(location = 0) in vec3 pos;
-  layout(location = 1) in vec2 texCoords;
-  
-  out vec2 coords;
-  
-  void main(void)
-  {
-    coords = texCoords.st;
-    
-    gl_Position = vec4(pos, 1.0);
-  }
-  `;
-  
-  const string fragmentShaderSource=`
-  #version 330
-  
-  uniform sampler2D colMap;
-  
-  in vec2 coords;
-  
-  void main(void)
-  {
-    vec3 color = texture2D(colMap, coords.st).xyz;
-    
-    gl_FragColor = vec4((coords.yyx + color), 1.0);
-  }
-  `;
-  
-  auto shader = glCreateProgram();
-  enforce(shader > 0, "Error assigning main shader program id");
-  
-  auto vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  enforce(vertexShader > 0, "Error assigning vertex shader program id");
-  
-  auto vertexShaderZ = toStringz(vertexShaderSource);
-  vertexShader.glShaderSource(1, &vertexShaderZ, null);
-  
-  vertexShader.glCompileShader();
-  
-  int status;
-  vertexShader.glGetShaderiv(GL_COMPILE_STATUS, &status);
-  enforce(status != GL_FALSE, 
-         {
-           int errorLength;
-           vertexShader.glGetShaderiv(GL_INFO_LOG_LENGTH, &errorLength);
-           char[] error = new char[errorLength];
-           vertexShader.glGetShaderInfoLog(errorLength, null, error.ptr);
-           
-           writeln(error);
-         });
 
-         
-  auto fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  enforce(fragmentShader > 0, "Error assigning fragment shader program id");
-  
-  auto fragmentShaderZ = toStringz(fragmentShaderSource);
-  fragmentShader.glShaderSource(1, &fragmentShaderZ, null);
-  
-  fragmentShader.glCompileShader();
-  
-  fragmentShader.glGetShaderiv(GL_COMPILE_STATUS, &status);
-  enforce(status != GL_FALSE, 
-         {
-           int errorLength;
-           fragmentShader.glGetShaderiv(GL_INFO_LOG_LENGTH, &errorLength);
-           char[] error = new char[errorLength];
-           fragmentShader.glGetShaderInfoLog(errorLength, null, error.ptr);
-           
-           writeln(error);
-         });
-         
-         
-  shader.glAttachShader(vertexShader);
-  shader.glAttachShader(fragmentShader);
-  shader.glLinkProgram();
-  shader.glGetShaderiv(GL_LINK_STATUS, &status);
-  enforce(status != GL_FALSE, 
-         {
-           int errorLength;
-           shader.glGetShaderiv(GL_INFO_LOG_LENGTH, &errorLength);
-           char[] error = new char[errorLength];
-           shader.glGetShaderInfoLog(errorLength, null, error.ptr);
-           
-           writeln(error);
-         });
-}
 
 void main(string args[])
 {
@@ -135,5 +79,5 @@ void main(string args[])
   
   setupWindow(800, 600);
   
-  setupShaders();
+  auto shader = makeShader(vertexShaderSource, fragmentShaderSource);
 }
