@@ -19,7 +19,7 @@ import textures;
 const string vertexShaderSource=`
 #version 330
 
-layout(location = 0) in vec3 pos;
+layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
 
 out vec2 coords;
@@ -28,7 +28,7 @@ void main(void)
 {
   coords = texCoords.st;
   
-  gl_Position = vec4(pos, 1.0);
+  gl_Position = vec4(position, 1.0);
 }
 `;
 
@@ -43,7 +43,10 @@ void main(void)
 {
   vec3 color = texture2D(colorMap, coords.st).xyz;
   
-  gl_FragColor = vec4((coords.yyx + color), 1.0);
+  //gl_FragColor = vec4((coords.yyx + color), 1.0);
+  
+  gl_FragColor = vec4(color, 1.0);
+  //gl_FragColor = vec4(coords.xy, 0.0, 1.0);
 }
 `;
 
@@ -118,7 +121,7 @@ SDL_Window* setupWindow(int width, int height)
   auto context = SDL_GL_CreateContext(window);
   SDL_GL_SetSwapInterval(1);
   
-  glClearColor(0.0, 0.0, 0.0, 1.0);
+  glClearColor(0.0, 0.0, 0.5, 1.0);
   glViewport(0, 0, width, height);
   
   GLVersion glVersion = DerelictGL3.reload();
@@ -131,40 +134,47 @@ SDL_Window* setupWindow(int width, int height)
 
 uint makeVAO()
 {
-  uint verticesVBO, colorsVBO;
-  
   immutable float[] vertices = [-0.75, -0.75, 0.0,
                                  0.75,  0.75, 0.0,
-                                -0.75,  0.75, 0.0];
-                         
-  immutable float[] colors = [0.0, 0.0,
-                              1.0, 1.0,
-                              0.0, 1.0];
-                              
+                                -0.75,  0.75, 0.0,
+                                 
+                                 0.75, -0.75, 0.0,
+                                -0.75, -0.75, 0.0,
+                                 0.75,  0.75, 0.0];
+                                 
+  immutable float[] texCoords = [0.0, 0.0,
+                                 1.0, 1.0,
+                                 0.0, 1.0,
+                                 
+                                 1.0, 0.0,
+                                 0.0, 0.0,
+                                 1.0, 1.0];
+               
   uint vao = 0;
   glGenVertexArrays(1, &vao);
   
   vao.glBindVertexArray();
-  
-  glGenBuffers(1, &verticesVBO);
-  enforce(verticesVBO > 0);
-  
-  glBindBuffer(GL_ARRAY_BUFFER, verticesVBO);
-  
-  glBufferData(GL_ARRAY_BUFFER, vertices.length * GL_FLOAT.sizeof, vertices.ptr, GL_STATIC_DRAW);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, null);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  
-  
-  glGenBuffers(1, &colorsVBO);
-  enforce(colorsVBO > 0);
-  glBindBuffer(GL_ARRAY_BUFFER, colorsVBO);
-  glBufferData(GL_ARRAY_BUFFER, colors.length * GL_FLOAT.sizeof, colors.ptr, GL_STATIC_DRAW);
-  glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  
+  {
+    uint verticesVBO;
+    glGenBuffers(1, &verticesVBO);
+    enforce(verticesVBO > 0);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, verticesVBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.length * GL_FLOAT.sizeof, vertices.ptr, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, null);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    uint texCoordsVBO;
+    glGenBuffers(1, &texCoordsVBO);
+    enforce(texCoordsVBO > 0);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, texCoordsVBO);
+    glBufferData(GL_ARRAY_BUFFER, texCoords.length * GL_FLOAT.sizeof, texCoords.ptr, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+  } 
   glBindVertexArray(0);
   
   return vao;
