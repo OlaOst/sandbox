@@ -2,15 +2,18 @@ pragma(lib, "DerelictUtil.lib");
 pragma(lib, "DerelictSDL2.lib");
 pragma(lib, "DerelictGL3.lib");
 
+
 import std.conv;
 import std.exception;
 import std.stdio;
 import std.string;
 
 import derelict.opengl3.gl3;
-import derelict.sdl2.sdl2;
+import derelict.sdl2.sdl;
+import derelict.sdl2.image;
 
 import shaders;
+import textures;
 
 
 const string vertexShaderSource=`
@@ -74,6 +77,7 @@ void setupWindow(int width, int height)
 void main(string args[])
 {
   DerelictSDL2.load();
+  DerelictSDL2Image.load();
   DerelictGL3.load();
   
   setupWindow(800, 600);
@@ -82,6 +86,8 @@ void main(string args[])
   
   makeVAO();
   initUniforms(shader);
+  
+  makeTexture("bugship.png");
 }
 
 

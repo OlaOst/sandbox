@@ -7,7 +7,7 @@ import std.string;
 import derelict.opengl3.gl3;
 
 
-public int makeShader(string vertexShaderSource, string fragmentShaderSource)
+int makeShader(string vertexShaderSource, string fragmentShaderSource)
 { 
   auto shader = glCreateProgram();
   enforce(shader > 0, "Error assigning main shader program id");
