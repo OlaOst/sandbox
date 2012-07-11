@@ -24,10 +24,10 @@ void main(string args[])
   
   auto window = setupWindow(800, 600);
 
-  auto shader = makeShader("texture");
+  auto shader = buildShader("texture");
   auto vao = makeVAO();
   
-  initUniforms(shader);
+  shader.initUniforms();
   
   auto textureId = makeTexture("bugship.png");
   
