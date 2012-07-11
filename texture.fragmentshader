@@ -1,0 +1,15 @@
+#version 330
+
+uniform sampler2D colorMap;
+
+in vec2 coords;
+
+void main(void)
+{
+  vec3 color = texture2D(colorMap, coords.st).xyz;
+  
+  gl_FragColor = vec4((coords.yyx * color), 1.0);
+  
+  //gl_FragColor = vec4(color, 1.0);
+  //gl_FragColor = vec4(coords.xy, 0.0, 1.0);
+}

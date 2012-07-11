@@ -1,11 +1,23 @@
 module shaders;
 
 import std.exception;
+import std.file;
 import std.stdio;
 import std.string;
 
 import derelict.opengl3.gl3;
 
+
+int makeShader(string shaderName)
+{
+  string vertexShader = shaderName ~ ".vertexshader";
+  string fragmentShader = shaderName ~ ".fragmentshader";
+  
+  enforce(exists(vertexShader), "Could not find file " ~ vertexShader);
+  enforce(exists(fragmentShader), "Could not find file " ~ fragmentShader);
+  
+  return makeShader(vertexShader.readText(), fragmentShader.readText());
+}
 
 int makeShader(string vertexShaderSource, string fragmentShaderSource)
 { 
