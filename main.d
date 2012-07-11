@@ -40,7 +40,19 @@ void main(string args[])
       switch (event.type)
       {
         case SDL_KEYDOWN:
-          running = false;
+          switch (event.key.keysym.sym)
+          {
+            case SDLK_ESCAPE:
+              running = false;
+              break;
+              
+            case SDLK_F5:
+              shader = buildShader("texture");
+              break;
+              
+            default:
+              break;
+          }
           break;
           
         default:
@@ -57,7 +69,7 @@ void main(string args[])
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textureId);
     
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
@@ -91,7 +103,7 @@ SDL_Window* setupWindow(int width, int height)
   
   GLVersion glVersion = DerelictGL3.reload();
 
-  writeln("loaded OpenGL version " ~ to!string(glVersion));
+  writeln("loaded OpenGL version " ~ to!string(glVersion));  
   
   return window;
 }
@@ -100,20 +112,14 @@ SDL_Window* setupWindow(int width, int height)
 uint makeVAO()
 {
   immutable float[] vertices = [-0.75, -0.75, 0.0,
-                                 0.75,  0.75, 0.0,
                                 -0.75,  0.75, 0.0,
-                                 
-                                 0.75, -0.75, 0.0,
-                                -0.75, -0.75, 0.0,
-                                 0.75,  0.75, 0.0];
+                                 0.75,  0.75, 0.0,
+                                 0.75, -0.75, 0.0];
                                  
   immutable float[] texCoords = [0.0, 0.0,
-                                 1.0, 1.0,
                                  0.0, 1.0,
-                                 
-                                 1.0, 0.0,
-                                 0.0, 0.0,
-                                 1.0, 1.0];
+                                 1.0, 1.0,
+                                 1.0, 0.0];
                
   uint vao = 0;
   glGenVertexArrays(1, &vao);
@@ -150,7 +156,7 @@ void initUniforms(uint shader)
 {
   auto colorLocation = shader.glGetUniformLocation("colorMap");
   
-  enforce(colorLocation != -1, "Error: main shader did not assign id to sampler2D colorMap");
+  //enforce(colorLocation != -1, "Error: main shader did not assign id to sampler2D colorMap");
   
   shader.glUseProgram();
   colorLocation.glUniform1i(0);

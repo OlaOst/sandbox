@@ -43,7 +43,6 @@ uint makeTexture(string fileName)
   return textureId;
 }
 
-
 //thanks to tito http://stackoverflow.com/questions/5862097/sdl-opengl-screenshot-is-black 
 SDL_Surface* flip(SDL_Surface* surface) 
 { 

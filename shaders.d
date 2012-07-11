@@ -34,7 +34,6 @@ uint buildShaderProgram(string vertexShaderSource, string fragmentShaderSource)
   return shader;
 }
 
-
 uint buildShader(string shaderSource, GLenum shaderType)
 {
   auto shader = glCreateShader(shaderType);

@@ -6,10 +6,16 @@ in vec2 coords;
 
 void main(void)
 {
-  vec3 color = texture2D(colorMap, coords.st).xyz;
+  vec3 color = texture2D(colorMap, coords.st).rgb;
   
-  gl_FragColor = vec4((coords.yyx * color), 1.0);
+  vec2 middle = vec2(coords.x - 0.5, coords.y - 0.5);
   
-  //gl_FragColor = vec4(color, 1.0);
-  //gl_FragColor = vec4(coords.xy, 0.0, 1.0);
+  float distance = sqrt(middle.x*middle.x + middle.y*middle.y);
+  
+  float angle = atan(middle.x, middle.y);
+
+  float spin = sin(angle * 3 + distance * 21);
+
+  gl_FragColor = vec4(spin, 0.0, 0.0, 1.0);
+  //gl_FragColor = vec4(distance, spin, sin(distance*3.14159*2*3)+spin, 0.0);
 }
