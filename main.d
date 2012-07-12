@@ -4,6 +4,7 @@ pragma(lib, "DerelictGL3.lib");
 
 
 import std.conv;
+import std.datetime;
 import std.exception;
 import std.stdio;
 import std.string;
@@ -22,7 +23,7 @@ void main(string args[])
   DerelictSDL2Image.load();
   DerelictGL3.load();
   
-  auto window = setupWindow(800, 600);
+  auto window = setupWindow(1024, 768);
 
   auto shader = buildShader("texture");
   auto vao = makeVAO();
@@ -30,6 +31,9 @@ void main(string args[])
   shader.initUniforms();
   
   auto textureId = makeTexture("bugship.png");
+  
+  StopWatch timer;
+  timer.start();
   
   bool running = true;
   while (running)
@@ -63,6 +67,8 @@ void main(string args[])
     glClear(GL_COLOR_BUFFER_BIT);
     
     shader.glUseProgram();
+    
+    glUniform1f(glGetUniformLocation(shader, "timer"), timer.peek().msecs * 0.001);
     
     vao.glBindVertexArray();
     
@@ -155,10 +161,12 @@ uint makeVAO()
 void initUniforms(uint shader)
 {
   auto colorLocation = shader.glGetUniformLocation("colorMap");
+  auto timer = shader.glGetUniformLocation("timer");
   
   //enforce(colorLocation != -1, "Error: main shader did not assign id to sampler2D colorMap");
   
   shader.glUseProgram();
   colorLocation.glUniform1i(0);
+  timer.glUniform1i(1);
   glUseProgram(0);
 }
