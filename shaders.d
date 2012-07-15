@@ -11,13 +11,23 @@ import derelict.opengl3.gl3;
 
 uint buildShader(string shaderName)
 {
+  scope(failure) writeln("Failed to build shader " ~ shaderName);
+  
   string vertexShader = shaderName ~ ".vertexshader";
   string fragmentShader = shaderName ~ ".fragmentshader";
   
   enforce(exists(vertexShader), "Could not find file " ~ vertexShader);
   enforce(exists(fragmentShader), "Could not find file " ~ fragmentShader);
   
-  return buildShaderProgram(vertexShader.readText(), fragmentShader.readText());
+  try
+  {
+    return buildShaderProgram(vertexShader.readText(), fragmentShader.readText());
+  }
+  catch (Exception e)
+  {
+    writeln("Error reading shader file: " ~ e.text);
+    return -1;
+  }
 }
 
 uint buildShaderProgram(string vertexShaderSource, string fragmentShaderSource)

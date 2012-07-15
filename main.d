@@ -3,9 +3,11 @@ pragma(lib, "DerelictSDL2.lib");
 pragma(lib, "DerelictGL3.lib");
 
 
+import core.time;
 import std.conv;
 import std.datetime;
 import std.exception;
+import std.file;
 import std.stdio;
 import std.string;
 
@@ -35,6 +37,9 @@ void main(string args[])
   StopWatch timer;
   timer.start();
   
+  SysTime fragmentShaderLastModified;
+  SysTime fragmentShaderLastChecked;
+  
   bool running = true;
   while (running)
   {
@@ -61,6 +66,21 @@ void main(string args[])
           
         default:
           break;
+      }
+    }
+    
+    SysTime checkLastAccessed;
+    SysTime checkLastModified;
+    // check periodically if the fragment shader file has been modified
+    if ((Clock.currTime() - fragmentShaderLastChecked).total!"msecs" > 200)
+    {
+      fragmentShaderLastChecked = Clock.currTime();
+      
+      getTimes(cast(const(char[]))"texture.fragmentshader", checkLastAccessed, checkLastModified);
+      if (checkLastModified > fragmentShaderLastModified)
+      {
+        fragmentShaderLastModified = checkLastModified;
+        shader = buildShader("texture");
       }
     }
     
@@ -96,7 +116,7 @@ SDL_Window* setupWindow(int width, int height)
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
   
-  auto window = SDL_CreateWindow("sandbox", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS | SDL_WINDOW_SHOWN);
+  auto window = SDL_CreateWindow("sandbox", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
   
   enforce(window !is null, "Error creating window");
   scope(failure) SDL_Quit();
