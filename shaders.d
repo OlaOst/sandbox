@@ -1,8 +1,10 @@
 module shaders;
 
+import std.algorithm;
 import std.conv;
 import std.exception;
 import std.file;
+import std.range;
 import std.stdio;
 import std.string;
 
@@ -13,15 +15,21 @@ uint buildShader(string shaderName)
 {
   scope(failure) writeln("Failed to build shader " ~ shaderName);
   
-  string vertexShader = shaderName ~ ".vertexshader";
-  string fragmentShader = shaderName ~ ".fragmentshader";
+  string shaderFile = shaderName ~ ".shader";
   
-  enforce(exists(vertexShader), "Could not find file " ~ vertexShader);
-  enforce(exists(fragmentShader), "Could not find file " ~ fragmentShader);
+  enforce(exists(shaderFile), "Could not find file " ~ shaderFile);
+  
+  string shaderSource = shaderFile.readText();
+  
+  enforce(!shaderSource.find("<vertex>").empty && !shaderSource.find("</vertex>").empty, "Could not find vertex shader section in " ~ shaderFile);
+  enforce(!shaderSource.find("<fragment>").empty && !shaderSource.find("</fragment>").empty, "Could not find fragment shader section in " ~ shaderFile);
+    
+  string vertexShader = shaderSource.findSplitAfter("<vertex>")[1].until("</vertex>").to!string();
+  string fragmentShader = shaderSource.findSplitAfter("<fragment>")[1].until("</fragment>").to!string();
   
   try
   {
-    return buildShaderProgram(vertexShader.readText(), fragmentShader.readText());
+    return buildShaderProgram(vertexShader, fragmentShader);
   }
   catch (Exception e)
   {
@@ -47,9 +55,12 @@ uint buildShaderProgram(string vertexShaderSource, string fragmentShaderSource)
 uint buildShader(string shaderSource, GLenum shaderType)
 {
   auto shader = glCreateShader(shaderType);
-  enforce(shader > 0, "Error assigning " ~ (shaderType==GL_VERTEX_SHADER?"vertex":shaderType==GL_FRAGMENT_SHADER?"fragment":shaderType==GL_GEOMETRY_SHADER?"geometry":to!string(shaderType)) ~ " shader program id");
+  enforce(shader > 0, "Error assigning " ~ (shaderType==GL_VERTEX_SHADER?"vertex":
+                                            shaderType==GL_FRAGMENT_SHADER?"fragment":
+                                            shaderType==GL_GEOMETRY_SHADER?"geometry":
+                                            shaderType.to!string()) ~ " shader program id");
   
-  auto shaderZ = toStringz(shaderSource);
+  auto shaderZ = shaderSource.toStringz();
   shader.glShaderSource(1, &shaderZ, null);
   
   shader.glCompileShader();

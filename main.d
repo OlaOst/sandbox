@@ -27,7 +27,7 @@ void main(string args[])
   
   auto window = setupWindow(1024, 768);
 
-  auto shader = buildShader("texture");
+  auto shader = buildShader("colortwist");
   auto vao = makeVAO();
   
   shader.initUniforms();
@@ -37,8 +37,8 @@ void main(string args[])
   StopWatch timer;
   timer.start();
   
-  SysTime fragmentShaderLastModified;
-  SysTime fragmentShaderLastChecked;
+  SysTime shaderLastModified;
+  SysTime shaderLastChecked;
   
   bool running = true;
   while (running)
@@ -56,7 +56,7 @@ void main(string args[])
               break;
               
             case SDLK_F5:
-              shader = buildShader("texture");
+              shader = buildShader("colortwist");
               break;
               
             default:
@@ -71,16 +71,16 @@ void main(string args[])
     
     SysTime checkLastAccessed;
     SysTime checkLastModified;
-    // check periodically if the fragment shader file has been modified
-    if ((Clock.currTime() - fragmentShaderLastChecked).total!"msecs" > 200)
+    // check periodically if the shader file has been modified
+    if ((Clock.currTime() - shaderLastChecked).total!"msecs" > 200)
     {
-      fragmentShaderLastChecked = Clock.currTime();
+      shaderLastChecked = Clock.currTime();
       
-      getTimes(cast(const(char[]))"texture.fragmentshader", checkLastAccessed, checkLastModified);
-      if (checkLastModified > fragmentShaderLastModified)
+      getTimes(cast(const(char[]))"colortwist.shader", checkLastAccessed, checkLastModified);
+      if (checkLastModified > shaderLastModified)
       {
-        fragmentShaderLastModified = checkLastModified;
-        shader = buildShader("texture");
+        shaderLastModified = checkLastModified;
+        shader = buildShader("colortwist");
       }
     }
     
