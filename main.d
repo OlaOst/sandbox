@@ -17,8 +17,7 @@ import derelict.sdl2.sdl;
 import derelict.sdl2.image;
 
 import glamour.shader;
-
-import textures;
+import glamour.texture;
 
 
 void main(string args[])
@@ -29,11 +28,12 @@ void main(string args[])
   
   auto window = setupWindow(1024, 768);
 
-  Shader shader = new Shader("colortwist.shader");
+  string shaderfile = "texture.shader";
+  
+  auto shader = new Shader(shaderfile);
+  auto texture = Texture2D.from_image("bugship.png");
   
   auto vao = makeVAO();
-  
-  auto textureId = makeTexture("bugship.png");
   
   StopWatch timer;
   timer.start();
@@ -57,7 +57,7 @@ void main(string args[])
               break;
               
             case SDLK_F5:
-              shader = new Shader("colortwist.shader");
+              shader = new Shader(shaderfile);
               break;
               
             default:
@@ -77,11 +77,11 @@ void main(string args[])
     {
       shaderLastChecked = Clock.currTime();
       
-      getTimes(cast(const(char[]))"colortwist.shader", checkLastAccessed, checkLastModified);
+      getTimes(cast(const(char[]))shaderfile, checkLastAccessed, checkLastModified);
       if (checkLastModified > shaderLastModified)
       {
         shaderLastModified = checkLastModified;
-        shader = new Shader("colortwist.shader");
+        shader = new Shader(shaderfile);
       }
     }
     
@@ -92,12 +92,12 @@ void main(string args[])
     
     vao.glBindVertexArray();
     
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureId);
+    texture.bind_and_activate();
     
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     
-    glBindTexture(GL_TEXTURE_2D, 0);
+    texture.unbind();
+    
     glBindVertexArray(0);
     shader.unbind();
     
