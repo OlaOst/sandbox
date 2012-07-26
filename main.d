@@ -18,6 +18,18 @@ import derelict.sdl2.image;
 
 import glamour.shader;
 import glamour.texture;
+import glamour.vbo;
+
+
+immutable float[] vertices = [-0.75, -0.75, 0.0,
+                              -0.75,  0.75, 0.0,
+                               0.75,  0.75, 0.0,
+                               0.75, -0.75, 0.0];
+                               
+immutable float[] texCoords = [0.0, 0.0,
+                               0.0, 1.0,
+                               1.0, 1.0,
+                               1.0, 0.0];
 
 
 void main(string args[])
@@ -28,12 +40,13 @@ void main(string args[])
   
   auto window = setupWindow(1024, 768);
 
-  string shaderfile = "texture.shader";
+  string shaderfile = "colortwist.shader";
   
   auto shader = new Shader(shaderfile);
   auto texture = Texture2D.from_image("bugship.png");
   
-  auto vao = makeVAO();
+  auto verticesVBO = new Buffer(vertices);
+  auto texVBO = new Buffer(texCoords);
   
   StopWatch timer;
   timer.start();
@@ -88,17 +101,16 @@ void main(string args[])
     glClear(GL_COLOR_BUFFER_BIT);
     
     shader.bind();
-    shader.uniform1f("timer", timer.peek().msecs * 0.001);
-    
-    vao.glBindVertexArray();
-    
+    verticesVBO.bind(0, GL_FLOAT, 3);
+    texVBO.bind(1, GL_FLOAT, 2);
     texture.bind_and_activate();
     
+    shader.uniform1f("timer", timer.peek().msecs * 0.001);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     
     texture.unbind();
-    
-    glBindVertexArray(0);
+    texVBO.unbind();
+    verticesVBO.unbind();
     shader.unbind();
     
     SDL_GL_SwapWindow(window);
@@ -132,47 +144,4 @@ SDL_Window* setupWindow(int width, int height)
   writeln("loaded OpenGL version " ~ to!string(glVersion));  
   
   return window;
-}
-
-
-uint makeVAO()
-{
-  immutable float[] vertices = [-0.75, -0.75, 0.0,
-                                -0.75,  0.75, 0.0,
-                                 0.75,  0.75, 0.0,
-                                 0.75, -0.75, 0.0];
-                                 
-  immutable float[] texCoords = [0.0, 0.0,
-                                 0.0, 1.0,
-                                 1.0, 1.0,
-                                 1.0, 0.0];
-               
-  uint vao = 0;
-  glGenVertexArrays(1, &vao);
-  
-  vao.glBindVertexArray();
-  {
-    uint verticesVBO;
-    glGenBuffers(1, &verticesVBO);
-    enforce(verticesVBO > 0);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, verticesVBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.length * GL_FLOAT.sizeof, vertices.ptr, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, null);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    
-    uint texCoordsVBO;
-    glGenBuffers(1, &texCoordsVBO);
-    enforce(texCoordsVBO > 0);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, texCoordsVBO);
-    glBufferData(GL_ARRAY_BUFFER, texCoords.length * GL_FLOAT.sizeof, texCoords.ptr, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-  } 
-  glBindVertexArray(0);
-  
-  return vao;
 }
