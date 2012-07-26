@@ -1,6 +1,4 @@
-<vertex>
-  #version 330
-
+vertex:
   layout(location = 0) in vec3 position;
   layout(location = 1) in vec2 texCoords;
 
@@ -12,11 +10,8 @@
     
     gl_Position = vec4(position, 1.0);
   }
-</vertex>
-
-<fragment>
-  #version 330
-
+  
+fragment:
   uniform sampler2D colorMap;
   uniform float timer;
 
@@ -33,4 +28,3 @@
     if (color.r > threshold && color.g > threshold && color.b > threshold)
       color = (color.rgb, 0.88);
   }
-</fragment>

@@ -1,6 +1,4 @@
-<vertex>
-  #version 330
-
+vertex:
   layout(location = 0) in vec3 position;
   layout(location = 1) in vec2 texCoords;
 
@@ -12,11 +10,9 @@
     
     gl_Position = vec4(position, 1.0);
   }
-</vertex>
 
-<fragment>
-  #version 330
 
+fragment:
   uniform sampler2D colorMap;
   uniform float timer;
 
@@ -45,9 +41,5 @@
     float x = distance * cos(angle + twist * sin(timer * 0.3)*1.3) * 31;
     float y = distance * sin(angle + twist * cos(timer * 0.1)*1.3) * 13;
     
-    //gl_FragColor = vec4(reversepolar, 1.0-(spin1 * -spin2), spin2 - spin1, 1.0);
-    //gl_FragColor = vec4((y/x) / (x/y), spin2/y, x/spin1, 1.0);
-    color = vec4(texcolor, 1.0) * vec4(coords.x/coords.y, coords.y/coords.x, coords.x/coords.y, 1.0) * vec4((y/x) / (x/y), spin2/y, x/spin1, 1.0);
-    //color = vec4(coords.x/coords.y, coords.y/coords.x, coords.x/coords.y, 1.0) * vec4((y/x) / (x/y), spin2/y, x/spin1, 1.0);
+    color = vec4(texcolor, 1.0) / vec4(-coords.x*-coords.y, coords.y/coords.x, coords.x/coords.y, 1.0) * vec4((y/x) / (x/y), spin2/y, x/spin1, 1.0);
   }
-</fragment>

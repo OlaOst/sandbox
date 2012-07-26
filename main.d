@@ -1,7 +1,8 @@
+module main;
+
 pragma(lib, "DerelictUtil.lib");
 pragma(lib, "DerelictSDL2.lib");
 pragma(lib, "DerelictGL3.lib");
-
 
 import core.time;
 import std.conv;
@@ -15,7 +16,8 @@ import derelict.opengl3.gl3;
 import derelict.sdl2.sdl;
 import derelict.sdl2.image;
 
-import shaders;
+import glamour.shader;
+
 import textures;
 
 
@@ -27,10 +29,9 @@ void main(string args[])
   
   auto window = setupWindow(1024, 768);
 
-  auto shader = buildShader("colortwist");
-  auto vao = makeVAO();
+  Shader shader = new Shader("colortwist.shader");
   
-  shader.initUniforms();
+  auto vao = makeVAO();
   
   auto textureId = makeTexture("bugship.png");
   
@@ -56,7 +57,7 @@ void main(string args[])
               break;
               
             case SDLK_F5:
-              shader = buildShader("colortwist");
+              shader = new Shader("colortwist.shader");
               break;
               
             default:
@@ -80,15 +81,14 @@ void main(string args[])
       if (checkLastModified > shaderLastModified)
       {
         shaderLastModified = checkLastModified;
-        shader = buildShader("colortwist");
+        shader = new Shader("colortwist.shader");
       }
     }
     
     glClear(GL_COLOR_BUFFER_BIT);
     
-    shader.glUseProgram();
-    
-    glUniform1f(glGetUniformLocation(shader, "timer"), timer.peek().msecs * 0.001);
+    shader.bind();
+    shader.uniform1f("timer", timer.peek().msecs * 0.001);
     
     vao.glBindVertexArray();
     
@@ -99,7 +99,7 @@ void main(string args[])
     
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
-    glUseProgram(0);
+    shader.unbind();
     
     SDL_GL_SwapWindow(window);
   }
@@ -175,18 +175,4 @@ uint makeVAO()
   glBindVertexArray(0);
   
   return vao;
-}
-
-
-void initUniforms(uint shader)
-{
-  auto colorLocation = shader.glGetUniformLocation("colorMap");
-  auto timer = shader.glGetUniformLocation("timer");
-  
-  //enforce(colorLocation != -1, "Error: main shader did not assign id to sampler2D colorMap");
-  
-  shader.glUseProgram();
-  colorLocation.glUniform1i(0);
-  timer.glUniform1i(1);
-  glUseProgram(0);
 }
