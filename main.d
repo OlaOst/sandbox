@@ -3,6 +3,7 @@ module main;
 pragma(lib, "DerelictUtil.lib");
 pragma(lib, "DerelictSDL2.lib");
 pragma(lib, "DerelictGL3.lib");
+pragma(lib, "Glamour.lib");
 
 import core.time;
 import std.conv;
@@ -48,6 +49,9 @@ void main(string args[])
   auto verticesVBO = new Buffer(vertices);
   auto texVBO = new Buffer(texCoords);
   
+  float mouseX = 0.0;
+  float mouseY = 0.0;
+  
   StopWatch timer;
   timer.start();
   
@@ -70,12 +74,19 @@ void main(string args[])
               break;
               
             case SDLK_F5:
-              shader = new Shader(shaderfile);
+              shader.remove();
+              collectException!FileException(shader = new Shader(shaderfile));
               break;
               
             default:
               break;
           }
+          break;
+          
+        case SDL_MOUSEMOTION:
+          mouseX = event.motion.x * (2.0 / 1024) - 1.0;
+          mouseY = event.motion.y * (-2.0 / 768) + 1.0;
+          writeln("setting mouse to " ~ to!string(mouseX) ~ "," ~ to!string(mouseY));
           break;
           
         default:
@@ -94,6 +105,8 @@ void main(string args[])
       if (checkLastModified > shaderLastModified)
       {
         shaderLastModified = checkLastModified;
+        
+        shader.remove();
         shader = new Shader(shaderfile);
       }
     }
@@ -106,6 +119,8 @@ void main(string args[])
     texture.bind_and_activate();
     
     shader.uniform1f("timer", timer.peek().msecs * 0.001);
+    shader.uniform1f("mouseX", mouseX);
+    shader.uniform1f("mouseY", mouseY);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     
     texture.unbind();
@@ -115,7 +130,6 @@ void main(string args[])
     
     SDL_GL_SwapWindow(window);
   }
-  
 }
 
 
