@@ -15,6 +15,8 @@ vertex:
 fragment:
   uniform sampler2D colorMap;
   uniform float timer;
+  uniform float mouseX;
+  uniform float mouseY;
 
   in vec2 coords;
 
@@ -33,11 +35,14 @@ fragment:
     vec3 texcolor = texture2D(colorMap, coords.st).rgb;
     
     vec2 center = coords - vec2(0.5, 0.5);
+    center += vec2(mouseX, mouseY);
     
-    float distance = sqrt(center.x*center.x + center.y*center.y);
+    float mouseDistance = sqrt(mouseX*mouseX + mouseY*mouseY);
+    
+    float distance = sqrt(center.x*center.x + center.y*center.y) * (1.0 + mouseDistance * mouseDistance * 5);
     float angle = atan(center.x, center.y);
     
-    float red = sin(angle*5 + sin(distance*TAU * (3+pulser(12))) * pulser(5)*4);
+    float red = sin(angle*5 + sin(distance*TAU * (3+pulser(12))) * pulser(5)*mouseDistance);
     float green = cos(angle*5 + sin(distance*TAU * (2+pulser(11))) * pulser(6)*2);
     float blue = -sin(angle*5 + sin(distance*TAU * (1+pulser(10))) * pulser(7)*3);
     

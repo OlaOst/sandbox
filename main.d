@@ -75,7 +75,7 @@ void main(string args[])
               
             case SDLK_F5:
               shader.remove();
-              collectException!FileException(shader = new Shader(shaderfile));
+              collectException(shader = new Shader(shaderfile));
               break;
               
             default:
@@ -130,6 +130,11 @@ void main(string args[])
     
     SDL_GL_SwapWindow(window);
   }
+  
+  texture.remove();
+  texVBO.remove();
+  verticesVBO.remove();
+  shader.remove();
 }
 
 
