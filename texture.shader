@@ -8,6 +8,12 @@ vertex:
   {
     coords = texCoords.st;
     
+    mat2 rot = mat2(0.707, -0.707, 0.707, 0.707); // rotate 45 degrees
+    
+    position.xy = rot * position.xy;
+    
+    position.y *= sqrt(3);
+    
     gl_Position = vec4(position, 1.0);
   }
   

@@ -65,6 +65,11 @@ class FrameBuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
   
+  void setData(float[] data)
+  {
+    texture.set_data(data, GL_RGBA, width, height, GL_RGBA, GL_FLOAT);
+  }
+  
   void bindAndView()
   {
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -94,8 +99,8 @@ void main(string args[])
   auto shader = new Shader(shaderfile);
   auto textureShader = new Shader("texture.shader");
   
-  enum int width = 512;
-  enum int height = 512;
+  enum int width = 1024;
+  enum int height = 1024;
   
   float[] data;
   data.length = width * height * 4;
@@ -103,9 +108,11 @@ void main(string args[])
   
   for (int i = 0; i < data.length; i+=4)
   {
-    data[i] = uniform(0, 2) % 2;
+    data[i] = 0.3; //uniform(0, 2) % 2;
     data[i+3] = 1.0;
   }
+  
+  data[width*height*2+width*2 + 2] = 1.0; // initial seed in the middle
   
   auto frames = [new FrameBuffer(width, height, data)];
   frames ~= new FrameBuffer(width, height, data);
@@ -151,6 +158,18 @@ void main(string args[])
           }
           break;
           
+        case SDL_KEYUP:
+          switch (event.key.keysym.sym)
+          {
+            case SDLK_SPACE:
+              counter++;
+              break;
+              
+            default:
+              break;
+          }
+          break;
+          
         case SDL_MOUSEMOTION:
           mouseX = event.motion.x * (2.0 / 1024) - 1.0;
           mouseY = event.motion.y * (-2.0 / 768) + 1.0;
@@ -176,6 +195,9 @@ void main(string args[])
         
         shader.remove();
         shader = new Shader(shaderfile);
+        
+        foreach (frame; frames)
+          frame.setData(data);
       }
     }
     
@@ -224,7 +246,8 @@ void main(string args[])
     verticesVBO.unbind();
     textureShader.unbind();
     
-    SDL_GL_SwapWindow(window);
+    if (counter % 20 == 0)
+      SDL_GL_SwapWindow(window);
   }
   
   scope(exit)
