@@ -11,7 +11,6 @@ vertex:
     gl_Position = vec4(position, 1.0);
   }
 
-
 fragment:
   uniform sampler2D colorMap;
   uniform float timer;

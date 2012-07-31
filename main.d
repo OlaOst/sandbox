@@ -10,6 +10,7 @@ import std.conv;
 import std.datetime;
 import std.exception;
 import std.file;
+import std.random;
 import std.stdio;
 import std.string;
 
@@ -33,17 +34,80 @@ immutable float[] texCoords = [0.0, 0.0,
                                1.0, 0.0];
 
 
+
+/*class FrameBuffer
+{
+  uint fbo;
+  Texture2D texture;
+  int width;
+  int height;
+  
+  this(int width, int height, float[] data)
+  {
+    this.width = width;
+    this.height = height;
+    
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    
+    if (data != null)
+    {
+      texture = new Texture2D();
+      texture.set_data(data, GL_RGBA, width, height, GL_RGBA, GL_FLOAT, false);
+      
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+
+      enforce(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    }
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  }
+  
+  void bindAndView()
+  {
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glViewport(0, 0, width, height); // set viewport to size of texture
+  }
+  
+  void unbind()
+  {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  }
+}*/
+               
+               
 void main(string args[])
 {
   DerelictSDL2.load();
   DerelictSDL2Image.load();
   DerelictGL3.load();
   
-  auto window = setupWindow(1024, 768);
-
-  string shaderfile = "colortwist.shader";
+  enum int screenWidth = 1024;
+  enum int screenHeight = 768;
   
-  auto shader = new Shader(shaderfile);
+  auto window = setupWindow(screenWidth, screenHeight);
+
+  //string shaderfile = "automata.shader";
+  
+  //auto shader = new Shader(shaderfile);
+  auto textureShader = new Shader("colortwist.shader");
+  
+  /*enum int width = 512;
+  enum int height = 512;
+  
+  float[] data;
+  data.length = width * height * 4;
+  data[] = 0.5;
+  
+  for (int i = 0; i < data.length; i++)
+    data[i] = uniform(0.0, 1.0);*/
+  
+  /*auto frames = [new FrameBuffer(width, height, data)];
+  frames ~= new FrameBuffer(width, height, data);
+  
+  frames[0].texture = Texture2D.from_image("bugship.png");
+  frames[1].texture = Texture2D.from_image("bugship.png");*/
+  
   auto texture = Texture2D.from_image("bugship.png");
   
   auto verticesVBO = new Buffer(vertices);
@@ -59,8 +123,12 @@ void main(string args[])
   SysTime shaderLastChecked;
   
   bool running = true;
+  int counter = 0;
+  
   while (running)
   {
+    counter++;
+    
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
@@ -74,8 +142,8 @@ void main(string args[])
               break;
               
             case SDLK_F5:
-              shader.remove();
-              collectException(shader = new Shader(shaderfile));
+              //shader.remove();
+              //collectException(shader = new Shader(shaderfile));
               break;
               
             default:
@@ -94,7 +162,7 @@ void main(string args[])
       }
     }
     
-    SysTime checkLastAccessed;
+    /*SysTime checkLastAccessed;
     SysTime checkLastModified;
     // check periodically if the shader file has been modified
     if ((Clock.currTime() - shaderLastChecked).total!"msecs" > 200)
@@ -109,32 +177,65 @@ void main(string args[])
         shader.remove();
         shader = new Shader(shaderfile);
       }
-    }
+    }*/
     
+    /*{ // this section draws to one of the framebuffers, not to the screen
+      frames[counter % 2].bindAndView();
+      
+      glClearColor(0.0, 0.5, 0.0, 1.0);
+      glClear(GL_COLOR_BUFFER_BIT);
+      
+      shader.bind();
+      
+      shader.uniform1f("cellwidth", 1.0 / cast(float)width);
+      shader.uniform1f("cellheight", 1.0 / cast(float)height);
+      
+      frames[(counter+1) % 2].texture.bind_and_activate();
+      
+      verticesVBO.bind(0, GL_FLOAT, 3);
+      texVBO.bind(1, GL_FLOAT, 2);
+      
+      glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+      
+      texVBO.unbind();
+      verticesVBO.unbind();
+      shader.unbind();
+      
+      frames[counter % 2].unbind();
+    }*/
+    
+    glClearColor(0.0, 0.0, 0.5, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
     
-    shader.bind();
+    glViewport(0, 0, screenWidth, screenHeight);
+    
+    textureShader.bind();
+        
     verticesVBO.bind(0, GL_FLOAT, 3);
     texVBO.bind(1, GL_FLOAT, 2);
+    
     texture.bind_and_activate();
     
-    shader.uniform1f("timer", timer.peek().msecs * 0.001);
-    shader.uniform1f("mouseX", mouseX);
-    shader.uniform1f("mouseY", mouseY);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     
     texture.unbind();
     texVBO.unbind();
     verticesVBO.unbind();
-    shader.unbind();
+    textureShader.unbind();
     
     SDL_GL_SwapWindow(window);
   }
   
-  texture.remove();
-  texVBO.remove();
-  verticesVBO.remove();
-  shader.remove();
+  scope(exit)
+  {
+    //foreach (frame; frames)
+      //frame.texture.remove();
+    texture.remove();
+    texVBO.remove();
+    verticesVBO.remove();
+    //shader.remove();
+    textureShader.remove();
+  }
 }
 
 
