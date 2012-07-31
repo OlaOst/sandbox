@@ -17,21 +17,21 @@ fragment:
   uniform float cellwidth;
   uniform float cellheight;
 
-  in vec2 texCoords;
+  in vec2 coords;
 
   out vec4 color;
   
   void main(void)
   {
-    vec4 c = texture2D(tex, texCoords);
-    vec4 e = texture2D(tex, vec2(texCoords.x + cellwidth, texCoords.y));
-    vec4 w = texture2D(tex, vec2(texCoords.x - cellwidth, texCoords.y));
-    vec4 n = texture2D(tex, vec2(texCoords.x, texCoords.y + cellheight));
-    vec4 s = texture2D(tex, vec2(texCoords.x, texCoords.y - cellheight));
-    vec4 ne = texture2D(tex, vec2(texCoords.x + cellwidth, texCoords.y + cellheight));
-    vec4 se = texture2D(tex, vec2(texCoords.x + cellwidth, texCoords.y - cellheight));
-    vec4 nw = texture2D(tex, vec2(texCoords.x - cellwidth, texCoords.y + cellheight));
-    vec4 sw = texture2D(tex, vec2(texCoords.x - cellwidth, texCoords.y - cellheight));
+    vec4 c = texture2D(tex, coords);
+    vec4 e = texture2D(tex, vec2(coords.x + cellwidth, coords.y));
+    vec4 w = texture2D(tex, vec2(coords.x - cellwidth, coords.y));
+    vec4 n = texture2D(tex, vec2(coords.x, coords.y + cellheight));
+    vec4 s = texture2D(tex, vec2(coords.x, coords.y - cellheight));
+    vec4 ne = texture2D(tex, vec2(coords.x + cellwidth, coords.y + cellheight));
+    vec4 se = texture2D(tex, vec2(coords.x + cellwidth, coords.y - cellheight));
+    vec4 nw = texture2D(tex, vec2(coords.x - cellwidth, coords.y + cellheight));
+    vec4 sw = texture2D(tex, vec2(coords.x - cellwidth, coords.y - cellheight));
     
     int count = 0;
     
@@ -43,6 +43,9 @@ fragment:
     if (se.r > 0.9) { count++; }
     if (nw.r > 0.9) { count++; }
     if (sw.r > 0.9) { count++; }
+    
+    //color = vec4(count * (1.0 / 8.0), 1.0, 0.0, 1.0);
+    //color = texture2D(tex, coords);
     
     if ((c.r < 0.1 && count == 3) || (c.r > 0.9 && (count == 2 || count == 3)))
     {

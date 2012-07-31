@@ -23,10 +23,12 @@ import glamour.texture;
 import glamour.vbo;
 
 
-immutable float[] vertices = [-0.75, -0.75, 0.0,
-                              -0.75,  0.75, 0.0,
-                               0.75,  0.75, 0.0,
-                               0.75, -0.75, 0.0];
+enum float s = 1.0;
+
+immutable float[] vertices = [-1.0*s, -1.0*s, 0.0,
+                              -1.0*s,  1.0*s, 0.0,
+                               1.0*s,  1.0*s, 0.0,
+                               1.0*s, -1.0*s, 0.0];
                                
 immutable float[] texCoords = [0.0, 0.0,
                                0.0, 1.0,
@@ -35,7 +37,7 @@ immutable float[] texCoords = [0.0, 0.0,
 
 
 
-/*class FrameBuffer
+class FrameBuffer
 {
   uint fbo;
   Texture2D texture;
@@ -53,7 +55,7 @@ immutable float[] texCoords = [0.0, 0.0,
     if (data != null)
     {
       texture = new Texture2D();
-      texture.set_data(data, GL_RGBA, width, height, GL_RGBA, GL_FLOAT, false);
+      texture.set_data(data, GL_RGBA, width, height, GL_RGBA, GL_FLOAT);
       
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
 
@@ -73,7 +75,7 @@ immutable float[] texCoords = [0.0, 0.0,
   {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
-}*/
+}
                
                
 void main(string args[])
@@ -87,29 +89,27 @@ void main(string args[])
   
   auto window = setupWindow(screenWidth, screenHeight);
 
-  //string shaderfile = "automata.shader";
+  string shaderfile = "automata.shader";
   
-  //auto shader = new Shader(shaderfile);
-  auto textureShader = new Shader("colortwist.shader");
+  auto shader = new Shader(shaderfile);
+  auto textureShader = new Shader("texture.shader");
   
-  /*enum int width = 512;
+  enum int width = 512;
   enum int height = 512;
   
   float[] data;
   data.length = width * height * 4;
-  data[] = 0.5;
+  data[] = 0.0;
   
-  for (int i = 0; i < data.length; i++)
-    data[i] = uniform(0.0, 1.0);*/
+  for (int i = 0; i < data.length; i+=4)
+  {
+    data[i] = uniform(0, 2) % 2;
+    data[i+3] = 1.0;
+  }
   
-  /*auto frames = [new FrameBuffer(width, height, data)];
+  auto frames = [new FrameBuffer(width, height, data)];
   frames ~= new FrameBuffer(width, height, data);
-  
-  frames[0].texture = Texture2D.from_image("bugship.png");
-  frames[1].texture = Texture2D.from_image("bugship.png");*/
-  
-  auto texture = Texture2D.from_image("bugship.png");
-  
+    
   auto verticesVBO = new Buffer(vertices);
   auto texVBO = new Buffer(texCoords);
   
@@ -142,8 +142,8 @@ void main(string args[])
               break;
               
             case SDLK_F5:
-              //shader.remove();
-              //collectException(shader = new Shader(shaderfile));
+              shader.remove();
+              collectException(shader = new Shader(shaderfile));
               break;
               
             default:
@@ -162,7 +162,7 @@ void main(string args[])
       }
     }
     
-    /*SysTime checkLastAccessed;
+    SysTime checkLastAccessed;
     SysTime checkLastModified;
     // check periodically if the shader file has been modified
     if ((Clock.currTime() - shaderLastChecked).total!"msecs" > 200)
@@ -177,9 +177,9 @@ void main(string args[])
         shader.remove();
         shader = new Shader(shaderfile);
       }
-    }*/
+    }
     
-    /*{ // this section draws to one of the framebuffers, not to the screen
+    { // this section draws to one of the framebuffers, not to the screen
       frames[counter % 2].bindAndView();
       
       glClearColor(0.0, 0.5, 0.0, 1.0);
@@ -197,12 +197,13 @@ void main(string args[])
       
       glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
       
+      frames[(counter+1) % 2].texture.unbind();
       texVBO.unbind();
       verticesVBO.unbind();
       shader.unbind();
       
       frames[counter % 2].unbind();
-    }*/
+    }
     
     glClearColor(0.0, 0.0, 0.5, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -214,11 +215,11 @@ void main(string args[])
     verticesVBO.bind(0, GL_FLOAT, 3);
     texVBO.bind(1, GL_FLOAT, 2);
     
-    texture.bind_and_activate();
+    frames[(counter+0) % 2].texture.bind_and_activate();
     
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     
-    texture.unbind();
+    frames[(counter+0) % 2].texture.unbind();
     texVBO.unbind();
     verticesVBO.unbind();
     textureShader.unbind();
@@ -228,12 +229,11 @@ void main(string args[])
   
   scope(exit)
   {
-    //foreach (frame; frames)
-      //frame.texture.remove();
-    texture.remove();
+    foreach (frame; frames)
+      frame.texture.remove();
     texVBO.remove();
     verticesVBO.remove();
-    //shader.remove();
+    shader.remove();
     textureShader.remove();
   }
 }

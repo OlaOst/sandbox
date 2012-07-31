@@ -13,11 +13,11 @@ vertex:
   
 fragment:
   uniform sampler2D tex;
-  in vec2 texCoords;
+  in vec2 coords;
 
   out vec4 color;
 
   void main(void)
   {
-    color = texture2D(tex, texCoords).rgba;
+    color = texture2D(tex, coords).rgba;
   }
