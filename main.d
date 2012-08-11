@@ -5,6 +5,8 @@ pragma(lib, "DerelictSDL2.lib");
 pragma(lib, "DerelictGL3.lib");
 pragma(lib, "Glamour.lib");
 
+import sprite;
+
 import core.time;
 import std.algorithm;
 import std.array;
@@ -12,6 +14,8 @@ import std.conv;
 import std.datetime;
 import std.exception;
 import std.file;
+import std.math;
+import std.random;
 import std.range;
 import std.stdio;
 import std.string;
@@ -26,89 +30,13 @@ import glamour.shader;
 import glamour.texture;
 import glamour.vbo;
 
+
+
                              
 immutable vec2[] texCoords = [vec2(0.0, 0.0),
                               vec2(0.0, 1.0),
                               vec2(1.0, 1.0),
                               vec2(1.0, 0.0)];
-
-                               
-struct Sprite
-{
-  static immutable vec3[4] origo = [vec3(-1.0, -1.0, 0.0),
-                                    vec3(-1.0,  1.0, 0.0),
-                                    vec3( 1.0,  1.0, 0.0),
-                                    vec3( 1.0, -1.0, 0.0)];
-                                    
-  vec3 position = vec3(0.0, 0.0, 0.0);
-  float angle = 0.0;
-  float scale = 1.0;
-  
-  vec3[4] _vertices;
-  
-  @property vec3[4] vertices()
-  {
-    transformVertices();
-    return _vertices;
-  }
-  
-
-  this(vec3 position, float angle, float scale)
-  {
-    this.position = position;
-    this.angle = angle;
-    this.scale = scale;
-  }
-  
-  
-  unittest
-  {
-    Sprite translateTest;
-    translateTest.position = vec3(1.0, 0.0, 0.0);
-    
-    vec3[4] translationExpected = translateTest.origo.dup.map!(vector => vector + translateTest.position).array();
-    
-    auto translationResult = translateTest.vertices;
-    
-    assert(translationResult == translationExpected, "expected " ~ translationExpected.to!string ~ ", got " ~ translationResult.to!string);
-    
-    
-    Sprite translateAndRotateTest;
-    translateAndRotateTest.position = vec3(10.0, 0.0, 0.0);
-    translateAndRotateTest.angle = PI / 2.0;
-    
-    auto translateAndRotateExpected = translateAndRotateTest.origo.dup.map!(vector => vec3(cos(translateAndRotateTest.angle) * vector.x - sin(translateAndRotateTest.angle) * vector.y, 
-                                                                                           sin(translateAndRotateTest.angle) * vector.x + cos(translateAndRotateTest.angle) * vector.y, 
-                                                                                               vector.z))
-                                                                      .map!(vector => vector + translateAndRotateTest.position).array();
-    
-    auto translateAndRotateResult = translateAndRotateTest.vertices;
-   
-    assert(translateAndRotateResult == translateAndRotateExpected, "expected " ~ translateAndRotateExpected.to!string ~ ", got " ~ translateAndRotateResult.to!string);
-    
-    
-    Sprite translateRotateAndScaleTest;
-    translateRotateAndScaleTest.position = vec3(10.0, 0.0, 0.0);
-    translateRotateAndScaleTest.angle = PI / 2.0;
-    translateRotateAndScaleTest.scale = 0.5;
-    
-    auto translateRotateAndScaleExpected = translateRotateAndScaleTest.origo.dup.map!(vector => vec3(cos(translateRotateAndScaleTest.angle) * vector.x - sin(translateRotateAndScaleTest.angle) * vector.y, 
-                                                                                                     sin(translateRotateAndScaleTest.angle) * vector.x + cos(translateRotateAndScaleTest.angle) * vector.y, 
-                                                                                                     vector.z))
-                                                                                .map!(vector => vec3(vector.x * translateRotateAndScaleTest.scale, vector.y * translateRotateAndScaleTest.scale, vector.z))
-                                                                                .map!(vector => vector + translateRotateAndScaleTest.position).array();
-    
-    auto translateRotateAndScaleResult = translateRotateAndScaleTest.vertices;
-   
-    assert(translateRotateAndScaleResult == translateRotateAndScaleExpected, "expected " ~ translateRotateAndScaleExpected.to!string ~ ", got " ~ translateRotateAndScaleResult.to!string);
-  }
-  void transformVertices()
-  {
-    auto transform = mat4.translation(position.x, position.y, position.z).rotatez(angle).scale(scale, scale, 1.0);
-    
-    _vertices = origo.dup.map!(vector => (vec4(vector, 1.0) * transform).xyz).array().to!(Vector!(float,3)[]);
-  }
-}
 
 
 void main(string args[])
@@ -119,15 +47,17 @@ void main(string args[])
   
   auto window = setupWindow(1024, 768);
 
-  string shaderfile = "colortwist.shader";
+  string shaderfile = "texture.shader";
   
   auto shader = new Shader(shaderfile);
   auto texture = Texture2D.from_image("bugship.png");
   
   Sprite[] sprites;
   
-  sprites ~= Sprite(vec3(-0.75, 0.0, 0.0), 0.0, 0.5);
-  sprites ~= Sprite(vec3( 0.75, 0.0, 0.0), 0.0, 0.5);
+  for (int i = 0; i < 100; i++)
+  {
+    sprites ~= Sprite(vec3(uniform(-1.0, 1.0), uniform(-1.0, 1.0), 0.0), uniform(-PI, PI), uniform(0.05, 0.2));
+  }
   
   vec3[] verts;
   verts = verts.reduce!((arr, sprite) => arr ~ sprite.vertices[0..3] ~ sprite.vertices[0..1] ~ sprite.vertices[2..4])(sprites);
@@ -198,7 +128,16 @@ void main(string args[])
         shader.remove();
         shader = new Shader(shaderfile);
       }
+    }    
+    
+    foreach (ref sprite; sprites)
+    {
+      sprite.position -= vec3(sprite.position.y, -sprite.position.x, sprite.position.z) * 0.01 * (0.1/sprite.scale);
+      sprite.angle = atan2(sprite.position.y, sprite.position.x);
     }
+    verts.length = 0;
+    verts = verts.reduce!((arr, sprite) => arr ~ sprite.vertices[0..3] ~ sprite.vertices[0..1] ~ sprite.vertices[2..4])(sprites);
+    verticesVBO.update(verts, 0);
     
     glClear(GL_COLOR_BUFFER_BIT);
     
@@ -210,7 +149,7 @@ void main(string args[])
     shader.uniform1f("timer", timer.peek().msecs * 0.001);
     shader.uniform1f("mouseX", mouseX);
     shader.uniform1f("mouseY", mouseY);
-    glDrawArrays(GL_TRIANGLES, 0, 12);
+    glDrawArrays(GL_TRIANGLES, 0, verts.length);
     
     texture.unbind();
     texVBO.unbind();
