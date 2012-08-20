@@ -7,6 +7,11 @@ import gl3n.linalg;
 
 struct Sprite
 {
+  static immutable vec2[] texCoords = [vec2(0.0, 0.0),
+                                       vec2(0.0, 1.0),
+                                       vec2(1.0, 1.0),
+                                       vec2(1.0, 0.0)];
+                              
   static immutable vec3[] origo = [vec3(-1.0, -1.0, 0.0),
                                     vec3(-1.0,  1.0, 0.0),
                                     vec3( 1.0,  1.0, 0.0),
@@ -24,6 +29,16 @@ struct Sprite
     return _vertices;
   }
   
+  @property vec3[] verticesForQuadTriangles()
+  {
+    auto verts = vertices;
+    return verts[0..3] ~ verts[0..1] ~ verts[2..4];
+  }
+  
+  @property vec2[] texCoordsForQuadTriangles()
+  {
+    return (texCoords[0..3] ~ texCoords[0..1] ~ texCoords[2..4]).dup;
+  }
 
   this(vec3 position, float angle, float scale)
   {
@@ -31,7 +46,7 @@ struct Sprite
     this.angle = angle;
     this.scale = scale;
   }
-  
+
   
   unittest
   {

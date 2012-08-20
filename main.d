@@ -31,14 +31,6 @@ import glamour.texture;
 import glamour.vbo;
 
 
-
-                             
-immutable vec2[] texCoords = [vec2(0.0, 0.0),
-                              vec2(0.0, 1.0),
-                              vec2(1.0, 1.0),
-                              vec2(1.0, 0.0)];
-
-
 void main(string args[])
 {
   DerelictSDL2.load();
@@ -46,27 +38,29 @@ void main(string args[])
   DerelictGL3.load();
   
   auto window = setupWindow(1024, 768);
-
+  
   string shaderfile = "texture.shader";
   
   auto shader = new Shader(shaderfile);
-  auto texture = Texture2D.from_image("bugship.png");
+  auto textures = [Texture2D.from_image("bugship.png"), Texture2D.from_image("engine.png")];
   
-  Sprite[] sprites;
+  Sprite[][Texture2D] sprites;
   
-  for (int i = 0; i < 100; i++)
+  int spriteCount = 100;
+  
+  for (int i = 0; i < spriteCount; i++)
   {
-    sprites ~= Sprite(vec3(uniform(-1.0, 1.0), uniform(-1.0, 1.0), 0.0), uniform(-PI, PI), uniform(0.05, 0.2));
+    sprites[textures[uniform(0, textures.length)]] ~= Sprite(vec3(uniform(-1.0, 1.0), uniform(-1.0, 1.0), 0.0), uniform(-PI, PI), uniform(0.05, 0.2));
   }
   
   vec3[] verts;
-  verts = verts.reduce!((arr, sprite) => arr ~ sprite.vertices[0..3] ~ sprite.vertices[0..1] ~ sprite.vertices[2..4])(sprites);
+  verts.length = spriteCount * 6;
   
-  auto texCoordsGenerator = cycle(texCoords[0..3] ~ texCoords[0..1] ~ texCoords[2..4]);
+  vec2[] texCoords;
+  texCoords.length = spriteCount * 6;
   
   auto verticesVBO = new Buffer(verts);
-  auto tex = texCoordsGenerator.take(verts.length).array();
-  auto texVBO = new Buffer(tex);
+  auto texVBO = new Buffer(texCoords);
   
   float mouseX = 0.0;
   float mouseY = 0.0;
@@ -128,40 +122,60 @@ void main(string args[])
         shader.remove();
         shader = new Shader(shaderfile);
       }
-    }    
+    }
     
-    foreach (ref sprite; sprites)
+    foreach (texture; sprites.keys)
+    foreach (ref sprite; sprites[texture])
     {
       sprite.position -= vec3(sprite.position.y, -sprite.position.x, sprite.position.z) * 0.01 * (0.1/sprite.scale);
       sprite.angle = atan2(sprite.position.y, sprite.position.x);
     }
-    verts.length = 0;
-    verts = verts.reduce!((arr, sprite) => arr ~ sprite.vertices[0..3] ~ sprite.vertices[0..1] ~ sprite.vertices[2..4])(sprites);
-    verticesVBO.update(verts, 0);
     
     glClear(GL_COLOR_BUFFER_BIT);
     
     shader.bind();
-    verticesVBO.bind(0, GL_FLOAT, 3);
-    texVBO.bind(1, GL_FLOAT, 2);
-    texture.bind_and_activate();
     
     shader.uniform1f("timer", timer.peek().msecs * 0.001);
     shader.uniform1f("mouseX", mouseX);
     shader.uniform1f("mouseY", mouseY);
-    glDrawArrays(GL_TRIANGLES, 0, verts.length);
     
-    texture.unbind();
+    foreach (texture; sprites.keys)
+    {
+      auto spritesWithSameTexture = sprites[texture];
+      
+      verts.length = 0;
+      verts = verts.reduce!((arr, sprite) => arr ~ sprite.verticesForQuadTriangles)(spritesWithSameTexture);
+      verticesVBO.update(verts, 0);
+      
+      texCoords.length = 0;
+      texCoords = texCoords.reduce!((arr, sprite) => arr ~ sprite.texCoordsForQuadTriangles)(spritesWithSameTexture);
+      texVBO.update(texCoords, 0);
+    
+      verticesVBO.bind(0, GL_FLOAT, 3);
+      texVBO.bind(1, GL_FLOAT, 2);
+    
+      texture.bind_and_activate();
+      
+      glDrawArrays(GL_TRIANGLES, 0, verts.length);
+    
+      texture.unbind();
+    }
+    
     texVBO.unbind();
     verticesVBO.unbind();
+    
     shader.unbind();
     
     SDL_GL_SwapWindow(window);
   }
   
-  texture.remove();
+  
+  foreach (texture; sprites.keys)
+    texture.remove();
+  
   texVBO.remove();
   verticesVBO.remove();
+  
   shader.remove();
 }
 
