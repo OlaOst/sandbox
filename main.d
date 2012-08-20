@@ -39,18 +39,24 @@ void main(string args[])
   
   auto window = setupWindow(1024, 768);
   
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  
   string shaderfile = "texture.shader";
   
   auto shader = new Shader(shaderfile);
-  auto textures = [Texture2D.from_image("bugship.png"), Texture2D.from_image("engine.png")];
+  auto textures = ["bugship" : Texture2D.from_image("bugship.png"), 
+                   "engine" : Texture2D.from_image("engine.png"), 
+                   "explosion" : Texture2D.from_image("explosionSpriteSheet.png")];
   
-  Sprite[][Texture2D] sprites;
+  Sprite[][string] sprites;
   
   int spriteCount = 100;
   
   for (int i = 0; i < spriteCount; i++)
   {
-    sprites[textures[uniform(0, textures.length)]] ~= Sprite(vec3(uniform(-1.0, 1.0), uniform(-1.0, 1.0), 0.0), uniform(-PI, PI), uniform(0.05, 0.2));
+    sprites[textures.keys[uniform(0, textures.length)]] ~= Sprite(vec3(uniform(-1.0, 1.0), uniform(-1.0, 1.0), 0.0), uniform(-PI, PI), uniform(0.05, 0.2));
+    //sprites[textures.keys[uniform(0, textures.length)]] ~= Sprite(vec3(0.0, 0.0, 0.0), 0.0, 0.5);
   }
   
   vec3[] verts;
@@ -64,6 +70,7 @@ void main(string args[])
   
   float mouseX = 0.0;
   float mouseY = 0.0;
+  int frame = 0;
   
   StopWatch timer;
   timer.start();
@@ -124,8 +131,10 @@ void main(string args[])
       }
     }
     
-    foreach (texture; sprites.keys)
-    foreach (ref sprite; sprites[texture])
+    frame = cast(int)(timer.peek().msecs * 0.001 * 30) % 25;
+    
+    foreach (texturename; sprites.keys)
+    foreach (ref sprite; sprites[texturename])
     {
       sprite.position -= vec3(sprite.position.y, -sprite.position.x, sprite.position.z) * 0.01 * (0.1/sprite.scale);
       sprite.angle = atan2(sprite.position.y, sprite.position.x);
@@ -139,30 +148,34 @@ void main(string args[])
     shader.uniform1f("mouseX", mouseX);
     shader.uniform1f("mouseY", mouseY);
     
-    foreach (texture; sprites.keys)
+    foreach (texturename; sprites.keys)
     {
-      auto spritesWithSameTexture = sprites[texture];
+      auto texture = textures[texturename];
+      auto spritesWithSameTexture = sprites[texturename];
       
       verts.length = 0;
       verts = verts.reduce!((arr, sprite) => arr ~ sprite.verticesForQuadTriangles)(spritesWithSameTexture);
       verticesVBO.update(verts, 0);
-      
+
       texCoords.length = 0;
-      texCoords = texCoords.reduce!((arr, sprite) => arr ~ sprite.texCoordsForQuadTriangles)(spritesWithSameTexture);
+      
+      if (texturename == "explosion")
+        texCoords = texCoords.reduce!((arr, sprite) => arr ~ sprite.frameCoordsForQuadTriangles(frame, 5))(spritesWithSameTexture);
+      else
+        texCoords = texCoords.reduce!((arr, sprite) => arr ~ sprite.texCoordsForQuadTriangles)(spritesWithSameTexture);
+        
       texVBO.update(texCoords, 0);
-    
+      
       verticesVBO.bind(0, GL_FLOAT, 3);
       texVBO.bind(1, GL_FLOAT, 2);
-    
       texture.bind_and_activate();
       
       glDrawArrays(GL_TRIANGLES, 0, verts.length);
     
       texture.unbind();
+      texVBO.unbind();
+      verticesVBO.unbind();
     }
-    
-    texVBO.unbind();
-    verticesVBO.unbind();
     
     shader.unbind();
     
@@ -170,7 +183,7 @@ void main(string args[])
   }
   
   
-  foreach (texture; sprites.keys)
+  foreach (texture; textures.values)
     texture.remove();
   
   texVBO.remove();

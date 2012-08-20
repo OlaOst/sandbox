@@ -39,6 +39,20 @@ struct Sprite
   {
     return (texCoords[0..3] ~ texCoords[0..1] ~ texCoords[2..4]).dup;
   }
+  
+  vec2[] frameCoordsForQuadTriangles(int frame, int size)
+  {
+    frame = (size*size - frame) % (size*size);
+    int row = (frame / size) % size;
+    int col = (size-frame-1) % size;
+    
+    auto frameCoords = [vec2(1.0/size * col, 1.0/size * row),
+                        vec2(1.0/size * col, 1.0/size * (row+1)),
+                        vec2(1.0/size * (col+1), 1.0/size * (row+1)),
+                        vec2(1.0/size * (col+1), 1.0/size * row)];
+    
+    return (frameCoords[0..3] ~ frameCoords[0..1] ~ frameCoords[2..4]);
+  }
 
   this(vec3 position, float angle, float scale)
   {

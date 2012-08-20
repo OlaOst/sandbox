@@ -23,12 +23,8 @@ fragment:
   {
     color = texture2D(colorMap, coords.st).rgba;
     
-    vec2 center = coords - vec2(0.5, 0.5);
+    const float threshold = 0.01;
     
-    float dist = sqrt(center.x*center.x + center.y*center.y);
-    
-    const float threshold = (1.0 + sin(timer)) * 0.4*dist + 0.0 + (sin(dist * 3.141)+1.0)*0.1;
-    
-    if (color.r > threshold && color.g > threshold && color.b > threshold)
+    if (color.a < threshold)
       discard;
   }
